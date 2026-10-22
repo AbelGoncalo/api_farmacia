@@ -21,6 +21,22 @@ class CarrinhoRepository
             ->first();
     }
 
+    /**
+     * Procura o carrinho ativo do utilizador com os itens e produtos completos,
+     * preparado para o processo de checkout de uma encomenda.
+     */
+    public function buscarCarrinhoAtivoParaCheckout(int $utilizadorId): ?Carrinho
+    {
+        return Carrinho::query()
+            ->with('itens.produto')
+            ->where('utilizador_id', $utilizadorId)
+            ->where('estado', Carrinho::ESTADO_ATIVO)
+            ->first();
+    }
+
+    /**
+     * Cria um novo carrinho vazio para o utilizador indicado.
+     */
     public function criarCarrinho(int $utilizadorId): Carrinho
     {
         $carrinho = new Carrinho;
@@ -32,12 +48,13 @@ class CarrinhoRepository
         return $carrinho;
     }
 
-    public function buscarProdutoDisponivel(string $produtoId): ?Produto
+    public function buscarProdutoDisponivel(string $produtoId, bool $comLock = false): ?Produto
     {
         return Produto::query()
             ->where('id', $produtoId)
             ->where('ativo', true)
             ->where('disponivel_online', true)
+            ->when($comLock, fn ($query) => $query->lockForUpdate())
             ->first();
     }
 
@@ -51,36 +68,27 @@ class CarrinhoRepository
             ->first();
     }
 
-    public function quantidadeDoProdutoNoCarrinho(Carrinho $carrinho, string $produtoId): float
+    public function buscarItemDoProduto(Carrinho $carrinho, string $produtoId): ?ItemCarrinho
     {
-        return (float) $carrinho->itens()
+        return $carrinho->itens()
             ->where('produto_id', $produtoId)
-            ->sum('quantidade');
+            ->first();
     }
 
-    public function adicionarItem(Carrinho $carrinho, Produto $produto, int $quantidade): ItemCarrinho
+    public function criarItem(Carrinho $carrinho, Produto $produto, float|int $quantidade): ItemCarrinho
     {
-        $item = $carrinho->itens()->where('produto_id', $produto->id)->first();
-
-        if ($item === null) {
-            $item = new ItemCarrinho;
-            $item->id = (string) Str::uuid();
-            $item->carrinho_id = $carrinho->id;
-            $item->produto_id = $produto->id;
-            $item->quantidade = $quantidade;
-            $item->preco_unitario = $produto->preco;
-            $item->save();
-
-            return $item;
-        }
-
-        $item->quantidade = (float) $item->quantidade + $quantidade;
+        $item = new ItemCarrinho;
+        $item->id = (string) Str::uuid();
+        $item->carrinho_id = $carrinho->id;
+        $item->produto_id = $produto->id;
+        $item->quantidade = $quantidade;
+        $item->preco_unitario = $produto->preco;
         $item->save();
 
         return $item;
     }
 
-    public function atualizarQuantidade(ItemCarrinho $item, int $quantidade): ItemCarrinho
+    public function atualizarQuantidade(ItemCarrinho $item, float|int $quantidade): ItemCarrinho
     {
         $item->quantidade = $quantidade;
         $item->save();

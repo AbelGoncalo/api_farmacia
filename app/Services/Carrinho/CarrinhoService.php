@@ -26,12 +26,17 @@ class CarrinhoService
     {
         return DB::transaction(function () use ($utilizador, $produtoId, $quantidade): Carrinho {
             $carrinho = $this->obterCarrinho($utilizador);
-            $produto = $this->garantirProdutoDisponivel($produtoId);
+            $produto = $this->garantirProdutoDisponivel($produtoId, comLock: true);
 
-            $quantidadeAtual = $this->carrinhoRepository->quantidadeDoProdutoNoCarrinho($carrinho, $produtoId);
+            $item = $this->carrinhoRepository->buscarItemDoProduto($carrinho, $produtoId);
+            $quantidadeAtual = $item === null ? 0.0 : (float) $item->quantidade;
             $this->garantirStock($produto, $quantidadeAtual + $quantidade);
 
-            $this->carrinhoRepository->adicionarItem($carrinho, $produto, $quantidade);
+            if ($item === null) {
+                $this->carrinhoRepository->criarItem($carrinho, $produto, $quantidade);
+            } else {
+                $this->carrinhoRepository->atualizarQuantidade($item, $quantidadeAtual + $quantidade);
+            }
 
             return $this->obterCarrinho($utilizador);
         });
@@ -41,7 +46,7 @@ class CarrinhoService
     {
         return DB::transaction(function () use ($utilizador, $itemId, $quantidade): Carrinho {
             $item = $this->garantirItem($utilizador, $itemId);
-            $produto = $this->garantirProdutoDisponivel($item->produto_id);
+            $produto = $this->garantirProdutoDisponivel($item->produto_id, comLock: true);
 
             $this->garantirStock($produto, $quantidade);
 
@@ -73,9 +78,9 @@ class CarrinhoService
         });
     }
 
-    private function garantirProdutoDisponivel(string $produtoId): Produto
+    private function garantirProdutoDisponivel(string $produtoId, bool $comLock = false): Produto
     {
-        $produto = $this->carrinhoRepository->buscarProdutoDisponivel($produtoId);
+        $produto = $this->carrinhoRepository->buscarProdutoDisponivel($produtoId, $comLock);
 
         if ($produto === null) {
             throw new CarrinhoException(
