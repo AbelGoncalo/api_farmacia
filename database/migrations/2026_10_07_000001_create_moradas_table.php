@@ -25,9 +25,12 @@ return new class extends Migration
             $table->timestamp('criado_em')->nullable();
             $table->timestamp('atualizado_em')->nullable();
             $table->index(['utilizador_id', 'ativa']);
-            $table->unsignedBigInteger('utilizador_morada_predefinida_id')->nullable()
-                ->storedAs('IF(predefinida = 1 AND ativa = 1, utilizador_id, NULL)');
-            $table->unique('utilizador_morada_predefinida_id', 'moradas_predefinida_por_utilizador_unica');
+
+            if (Schema::getConnection()->getDriverName() === 'mysql') {
+                $table->unsignedBigInteger('utilizador_morada_predefinida_id')->nullable()
+                    ->storedAs('IF(predefinida = 1 AND ativa = 1, utilizador_id, NULL)');
+                $table->unique('utilizador_morada_predefinida_id', 'moradas_predefinida_por_utilizador_unica');
+            }
         });
     }
 

@@ -15,9 +15,12 @@ return new class extends Migration
             $table->timestamp('criado_em')->nullable();
             $table->timestamp('atualizado_em')->nullable();
             $table->index(['utilizador_id', 'estado']);
-            $table->unsignedBigInteger('utilizador_carrinho_ativo_id')->nullable()
-                ->storedAs("IF(estado = 'ATIVO', utilizador_id, NULL)");
-            $table->unique('utilizador_carrinho_ativo_id', 'carrinhos_um_ativo_por_utilizador');
+
+            if (Schema::getConnection()->getDriverName() === 'mysql') {
+                $table->unsignedBigInteger('utilizador_carrinho_ativo_id')->nullable()
+                    ->storedAs("IF(estado = 'ATIVO', utilizador_id, NULL)");
+                $table->unique('utilizador_carrinho_ativo_id', 'carrinhos_um_ativo_por_utilizador');
+            }
         });
     }
 
