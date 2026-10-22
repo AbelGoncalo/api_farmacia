@@ -32,6 +32,7 @@ class EncomendaResource extends JsonResource
             'observacoes' => $encomenda->observacoes,
             'criado_em' => $encomenda->criado_em?->toISOString(),
             'itens' => $this->whenLoaded('itens', ItemEncomendaResource::collection($encomenda->itens)),
+            'pagamentos' => $this->whenLoaded('pagamentos', PagamentoResource::collection($encomenda->pagamentos)),
         ];
     }
 }

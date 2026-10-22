@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Carrinho\CarrinhoController;
 use App\Http\Controllers\Api\V1\Catalogo\CatalogoController;
 use App\Http\Controllers\Api\V1\Encomenda\EncomendaController;
+use App\Http\Controllers\Api\V1\Encomenda\PagamentoController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -32,5 +33,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/', [EncomendaController::class, 'index'])->name('index');
         Route::post('/', [EncomendaController::class, 'store'])->name('store');
         Route::get('/{encomenda}', [EncomendaController::class, 'show'])->name('show');
+        Route::post('/{encomenda}/pagamento', [PagamentoController::class, 'registar'])->name('pagamento.registar');
+    });
+
+    Route::prefix('pagamentos')->name('pagamentos.')->middleware(['auth:api', 'can:processar-encomendas'])->group(function (): void {
+        Route::patch('/{pagamento}/confirmar', [PagamentoController::class, 'confirmar'])->name('confirmar');
     });
 });

@@ -2,84 +2,18 @@
 
 namespace Tests\Feature\Encomenda;
 
-use App\Models\Produto;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
+use Tests\Concerns\CriaEncomendas;
 use Tests\TestCase;
 
 class CheckoutEncomendaTest extends TestCase
 {
-    use RefreshDatabase;
-
-    /**
-     * Cria um cliente e autentica-o no guard `api`.
-     */
-    private function autenticar(): User
-    {
-        $utilizador = User::factory()->create([
-            'papel' => 'CLIENTE',
-            'estado' => 'ATIVO',
-        ]);
-
-        $this->actingAs($utilizador, 'api');
-
-        return $utilizador;
-    }
-
-    /**
-     * Cria um produto disponível com o stock indicado e preço fixo.
-     */
-    private function produtoComStock(float $stock): Produto
-    {
-        return Produto::factory()->create([
-            'categoria_id' => null,
-            'ativo' => true,
-            'disponivel_online' => true,
-            'quantidade_stock' => $stock,
-            'preco' => 10.00,
-        ]);
-    }
-
-    /**
-     * Insere uma morada do utilizador na base de dados e devolve o respetivo id.
-     */
-    private function criarMorada(User $utilizador): string
-    {
-        $id = (string) Str::uuid();
-
-        DB::table('moradas')->insert([
-            'id' => $id,
-            'utilizador_id' => $utilizador->id,
-            'nome_destinatario' => 'Maria Silva',
-            'telefone' => '912345678',
-            'provincia' => 'Lisboa',
-            'municipio' => 'Lisboa',
-            'bairro' => 'Centro',
-            'predefinida' => true,
-            'ativa' => true,
-            'criado_em' => now(),
-            'atualizado_em' => now(),
-        ]);
-
-        return $id;
-    }
-
-    /**
-     * Adiciona uma quantidade de um produto ao carrinho do utilizador autenticado.
-     */
-    private function adicionarAoCarrinho(Produto $produto, int $quantidade): void
-    {
-        $this->postJson('/api/v1/carrinho/itens', [
-            'produto_id' => $produto->id,
-            'quantidade' => $quantidade,
-        ])->assertStatus(201);
-    }
+    use CriaEncomendas, RefreshDatabase;
 
     public function test_checkout_cria_encomenda_decrementa_stock_e_esvazia_carrinho(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
         $produto = $this->produtoComStock(10.0);
 
         $this->adicionarAoCarrinho($produto, 3);
@@ -101,7 +35,7 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_checkout_com_carrinho_vazio_retorna_422(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
 
         $this->postJson('/api/v1/encomendas', ['tipo_entrega' => 'RECOLHA_LOJA'])
             ->assertStatus(422)
@@ -111,7 +45,7 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_checkout_rejeita_stock_insuficiente(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
         $produto = $this->produtoComStock(10.0);
 
         $this->adicionarAoCarrinho($produto, 5);
@@ -129,7 +63,7 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_checkout_valida_tipo_entrega(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
 
         $this->postJson('/api/v1/encomendas', [])
             ->assertStatus(422)
@@ -138,7 +72,7 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_checkout_entrega_domicilio_requer_morada(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
 
         $this->postJson('/api/v1/encomendas', ['tipo_entrega' => 'ENTREGA_DOMICILIO'])
             ->assertStatus(422)
@@ -147,7 +81,7 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_checkout_entrega_domicilio_aplica_taxa_configurada(): void
     {
-        $utilizador = $this->autenticar();
+        $utilizador = $this->autenticarCliente();
         $moradaId = $this->criarMorada($utilizador);
         $produto = $this->produtoComStock(10.0);
 
@@ -166,11 +100,10 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_index_lista_encomendas_do_utilizador(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
         $produto = $this->produtoComStock(10.0);
 
-        $this->adicionarAoCarrinho($produto, 1);
-        $this->postJson('/api/v1/encomendas', ['tipo_entrega' => 'RECOLHA_LOJA'])->assertStatus(201);
+        $this->criarEncomenda($produto);
 
         $this->getJson('/api/v1/encomendas')
             ->assertStatus(200)
@@ -180,14 +113,10 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_show_detalha_encomenda_propria(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
         $produto = $this->produtoComStock(10.0);
 
-        $this->adicionarAoCarrinho($produto, 1);
-
-        $id = $this->postJson('/api/v1/encomendas', ['tipo_entrega' => 'RECOLHA_LOJA'])
-            ->assertStatus(201)
-            ->json('data.id');
+        $id = $this->criarEncomenda($produto);
 
         $this->getJson("/api/v1/encomendas/{$id}")
             ->assertStatus(200)
@@ -196,14 +125,10 @@ class CheckoutEncomendaTest extends TestCase
 
     public function test_show_nao_acede_a_encomenda_de_outro_utilizador(): void
     {
-        $this->autenticar();
+        $this->autenticarCliente();
         $produto = $this->produtoComStock(10.0);
 
-        $this->adicionarAoCarrinho($produto, 1);
-
-        $id = $this->postJson('/api/v1/encomendas', ['tipo_entrega' => 'RECOLHA_LOJA'])
-            ->assertStatus(201)
-            ->json('data.id');
+        $id = $this->criarEncomenda($produto);
 
         $outro = User::factory()->create(['papel' => 'CLIENTE', 'estado' => 'ATIVO']);
         $this->actingAs($outro, 'api');

@@ -2,6 +2,7 @@
 
 namespace App\Repositories\Encomenda;
 
+use App\Enums\Encomenda\EstadoEncomenda;
 use App\Models\Encomenda;
 use App\Models\ItemEncomenda;
 use App\Models\Produto;
@@ -96,12 +97,45 @@ class EncomendaRepository
     }
 
     /**
+     * Trava a linha da encomenda indicada (SELECT ... FOR UPDATE), para serializar
+     * transições de estado em transações concorrentes.
+     */
+    public function travar(string $id): ?Encomenda
+    {
+        return Encomenda::query()
+            ->where('id', $id)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
+     * Trava a linha de uma encomenda do utilizador, ou null caso não pertença a ele.
+     */
+    public function travarDoUtilizador(string $id, int $utilizadorId): ?Encomenda
+    {
+        return Encomenda::query()
+            ->where('id', $id)
+            ->where('utilizador_id', $utilizadorId)
+            ->lockForUpdate()
+            ->first();
+    }
+
+    /**
+     * Atualiza o estado da encomenda.
+     */
+    public function alterarEstado(Encomenda $encomenda, EstadoEncomenda $estado): void
+    {
+        $encomenda->estado = $estado->value;
+        $encomenda->save();
+    }
+
+    /**
      * Procura uma encomenda pertencente ao utilizador, ou null caso não exista.
      */
     public function buscarDoUtilizador(string $id, int $utilizadorId): ?Encomenda
     {
         return Encomenda::query()
-            ->with('itens.produto:id,codigo,nome')
+            ->with(['itens.produto:id,codigo,nome', 'pagamentos'])
             ->where('id', $id)
             ->where('utilizador_id', $utilizadorId)
             ->first();

@@ -53,4 +53,10 @@ class Encomenda extends Model
     {
         return $this->hasMany(ItemEncomenda::class, 'encomenda_id');
     }
+
+    /** @return HasMany<Pagamento, Encomenda> */
+    public function pagamentos(): HasMany
+    {
+        return $this->hasMany(Pagamento::class, 'encomenda_id');
+    }
 }
