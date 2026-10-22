@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Auth\AuthController;
 use App\Http\Controllers\Api\V1\Carrinho\CarrinhoController;
 use App\Http\Controllers\Api\V1\Catalogo\CatalogoController;
+use App\Http\Controllers\Api\V1\Encomenda\EncomendaController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -25,5 +26,11 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login');
         Route::patch('/atualizar', [AuthController::class, 'atualizar'])->middleware('auth:api')->name('atualizar');
         Route::post('/sair', [AuthController::class, 'sair'])->middleware('auth:api')->name('sair');
+    });
+
+    Route::prefix('encomendas')->name('encomendas.')->middleware('auth:api')->group(function (): void {
+        Route::get('/', [EncomendaController::class, 'index'])->name('index');
+        Route::post('/', [EncomendaController::class, 'store'])->name('store');
+        Route::get('/{encomenda}', [EncomendaController::class, 'show'])->name('show');
     });
 });

@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\CarrinhoException;
+use App\Exceptions\EncomendaException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -38,6 +39,18 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (CarrinhoException $e, Request $request): ?JsonResponse {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], $e->status());
+        });
+
+        $exceptions->render(function (EncomendaException $e, Request $request): ?JsonResponse {
             if (! $request->is('api/*')) {
                 return null;
             }
