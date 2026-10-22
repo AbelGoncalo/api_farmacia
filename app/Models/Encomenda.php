@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
     'id',
@@ -58,5 +59,17 @@ class Encomenda extends Model
     public function pagamentos(): HasMany
     {
         return $this->hasMany(Pagamento::class, 'encomenda_id');
+    }
+
+    /** @return HasOne<Entrega, Encomenda> */
+    public function entrega(): HasOne
+    {
+        return $this->hasOne(Entrega::class, 'encomenda_id');
+    }
+
+    /** @return BelongsTo<Morada, Encomenda> */
+    public function morada(): BelongsTo
+    {
+        return $this->belongsTo(Morada::class, 'morada_id');
     }
 }

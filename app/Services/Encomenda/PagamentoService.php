@@ -18,6 +18,7 @@ class PagamentoService
     public function __construct(
         private readonly PagamentoRepository $pagamentoRepository,
         private readonly EncomendaRepository $encomendaRepository,
+        private readonly EntregaService $entregaService,
     ) {}
 
     /**
@@ -66,11 +67,13 @@ class PagamentoService
     }
 
     /**
-     * Confirma um pagamento pendente e move a encomenda associada para PAGA.
+     * Confirma um pagamento pendente, move a encomenda associada para PAGA
+     * e cria a entrega correspondente ao tipo escolhido.
      *
      * Dentro de uma transação: trava o pagamento e a encomenda, valida que ambos
      * estão em estado válido, confirma o pagamento (com o id de transação e a
-     * resposta do operador, se fornecidos) e atualiza o estado da encomenda.
+     * resposta do operador, se fornecidos), atualiza o estado da encomenda e
+     * cria o registo de entrega (com instantâneo da morada, se ao domicílio).
      *
      * @param  array{id_transacao?: ?string, dados_resposta_operador?: ?array}  $dados
      * @return ?Pagamento o pagamento confirmado, ou null se não existir.
@@ -106,6 +109,8 @@ class PagamentoService
             );
 
             $this->encomendaRepository->alterarEstado($encomenda, EstadoEncomenda::PAGA);
+
+            $this->entregaService->criarParaEncomenda($encomenda);
 
             return $pagamento->fresh();
         });

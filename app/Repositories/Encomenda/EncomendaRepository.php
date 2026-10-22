@@ -91,6 +91,7 @@ class EncomendaRepository
     {
         return Encomenda::query()
             ->with('itens.produto:id,codigo,nome')
+            ->with('entrega:id,encomenda_id,tipo,estado,entregue_em')
             ->where('utilizador_id', $utilizadorId)
             ->orderByDesc('criado_em')
             ->paginate($porPagina);
@@ -135,7 +136,7 @@ class EncomendaRepository
     public function buscarDoUtilizador(string $id, int $utilizadorId): ?Encomenda
     {
         return Encomenda::query()
-            ->with(['itens.produto:id,codigo,nome', 'pagamentos'])
+            ->with(['itens.produto:id,codigo,nome', 'pagamentos', 'entrega'])
             ->where('id', $id)
             ->where('utilizador_id', $utilizadorId)
             ->first();
