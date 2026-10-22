@@ -1,0 +1,29 @@
+<?php
+
+use App\Http\Controllers\Api\V1\Auth\AuthController;
+use App\Http\Controllers\Api\V1\Carrinho\CarrinhoController;
+use App\Http\Controllers\Api\V1\Catalogo\CatalogoController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('v1')->group(function (): void {
+    Route::prefix('catalogo')->name('catalogo.')->group(function (): void {
+        Route::get('/categorias', [CatalogoController::class, 'categorias'])->name('categorias');
+        Route::get('/produtos', [CatalogoController::class, 'produtos'])->name('produtos');
+        Route::get('/produtos/{produto}', [CatalogoController::class, 'produto'])->name('produto');
+    });
+
+    Route::prefix('carrinho')->name('carrinho.')->middleware('auth:api')->group(function (): void {
+        Route::get('/', [CarrinhoController::class, 'ver'])->name('ver');
+        Route::delete('/', [CarrinhoController::class, 'esvaziar'])->name('esvaziar');
+        Route::post('/itens', [CarrinhoController::class, 'adicionar'])->name('itens.adicionar');
+        Route::patch('/itens/{item}', [CarrinhoController::class, 'alterarQuantidade'])->name('itens.alterar');
+        Route::delete('/itens/{item}', [CarrinhoController::class, 'remover'])->name('itens.remover');
+    });
+
+    Route::prefix('autenticacao')->name('auth.')->group(function (): void {
+        Route::post('/registar', [AuthController::class, 'registar'])->name('registar');
+        Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login');
+        Route::patch('/atualizar', [AuthController::class, 'atualizar'])->middleware('auth:api')->name('atualizar');
+        Route::post('/sair', [AuthController::class, 'sair'])->middleware('auth:api')->name('sair');
+    });
+});

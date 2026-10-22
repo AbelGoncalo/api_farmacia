@@ -1,0 +1,6 @@
+{
+  "tools": {
+    "read": true,
+    "bash": true
+  }
+}
