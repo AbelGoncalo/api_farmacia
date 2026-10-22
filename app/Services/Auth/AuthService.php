@@ -2,7 +2,6 @@
 
 namespace App\Services\Auth;
 
-use App\Enums\Auth\PapelUtilizador;
 use App\Models\User;
 use App\Repositories\Auth\AuthRepository;
 use Illuminate\Support\Facades\Auth;
@@ -34,7 +33,7 @@ class AuthService
             return null;
         }
 
-        $papel = PapelUtilizador::tryFrom($cliente->papel);
+        $papel = $cliente->papelEnum();
 
         if ($papel === null) {
             return null;

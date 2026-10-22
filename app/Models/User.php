@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Auth\PapelUtilizador;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -32,6 +33,18 @@ class User extends Authenticatable implements JWTSubject
     public function getEmailForPasswordReset(): string
     {
         return $this->email;
+    }
+
+    public function papelEnum(): ?PapelUtilizador
+    {
+        return PapelUtilizador::tryFrom((string) $this->papel);
+    }
+
+    public function temPapel(PapelUtilizador ...$papeis): bool
+    {
+        $atual = $this->papelEnum();
+
+        return $atual !== null && in_array($atual, $papeis, true);
     }
 
     public function getJWTIdentifier(): int|string
