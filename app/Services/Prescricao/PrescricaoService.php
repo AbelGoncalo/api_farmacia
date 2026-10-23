@@ -4,6 +4,7 @@ namespace App\Services\Prescricao;
 
 use App\Enums\Prescricao\EstadoPrescricao;
 use App\Exceptions\PrescricaoException;
+use App\Jobs\AnalisarPrescricao;
 use App\Models\Prescricao;
 use App\Models\User;
 use App\Repositories\Prescricao\PrescricaoRepository;
@@ -41,7 +42,7 @@ class PrescricaoService
         }
 
         try {
-            return $this->prescricaoRepository->criarPrescricao([
+            $prescricao = $this->prescricaoRepository->criarPrescricao([
                 'id' => (string) Str::uuid(),
                 'utilizador_id' => $utilizador->id,
                 'caminho_ficheiro' => $caminho,
@@ -53,6 +54,10 @@ class PrescricaoService
 
             throw $e;
         }
+
+        AnalisarPrescricao::dispatch($prescricao->id)->afterCommit();
+
+        return $prescricao;
     }
 
     /**

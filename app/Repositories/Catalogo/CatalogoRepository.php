@@ -54,6 +54,24 @@ class CatalogoRepository
             ->paginate($porPagina);
     }
 
+    /**
+     * Produtos ativos candidatos à correspondência de um item de prescrição.
+     *
+     * @param  string  $palavraChave  palavra-chave normalizada (sem acentos, minúsculas)
+     * @return Collection<int, Produto>
+     */
+    public function candidatosCorrespondencia(string $palavraChave): Collection
+    {
+        $escapada = addcslashes($palavraChave, '%_\\');
+
+        return Produto::query()
+            ->where('ativo', true)
+            ->where('nome', 'like', "%{$escapada}%")
+            ->orderBy('nome')
+            ->limit(50)
+            ->get(['id', 'codigo', 'nome']);
+    }
+
     public function buscarProduto(
         string $id,
         bool $ativo,

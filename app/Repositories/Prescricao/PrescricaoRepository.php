@@ -2,6 +2,9 @@
 
 namespace App\Repositories\Prescricao;
 
+use App\Enums\Prescricao\EstadoPrescricao;
+use App\Integracoes\IA\ItemExtraido;
+use App\Integracoes\IA\ResultadoExtracao;
 use App\Models\Prescricao;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 
@@ -84,5 +87,51 @@ class PrescricaoRepository
             ->where('utilizador_id', $utilizadorId)
             ->orderByDesc('criado_em')
             ->paginate($porPagina);
+    }
+
+    /**
+     * Altera o estado de uma prescrição.
+     */
+    public function alterarEstado(Prescricao $prescricao, EstadoPrescricao $estado): void
+    {
+        $prescricao->estado = $estado->value;
+        $prescricao->save();
+    }
+
+    /**
+     * Guarda o resultado da extração da IA (incluindo a confiança de
+     * extração, que nunca se mistura com a de correspondência dos itens).
+     */
+    public function guardarResultadoIa(Prescricao $prescricao, ResultadoExtracao $resultado): void
+    {
+        $prescricao->resultado_ia = [
+            'provedor' => $resultado->provedor,
+            'confianca' => $resultado->confianca,
+            'extraido_em' => now()->toIso8601String(),
+            'itens' => array_map(fn (ItemExtraido $item) => [
+                'texto_original' => $item->textoOriginal,
+                'nome' => $item->nome,
+                'dosagem' => $item->dosagem,
+                'apresentacao' => $item->apresentacao,
+                'quantidade' => $item->quantidade,
+            ], $resultado->itens),
+        ];
+        $prescricao->save();
+    }
+
+    /**
+     * Regista uma falha de análise: estado ERRO_ANALISE e mensagem de erro
+     * (nunca exposta ao cliente). Usa atualização dirigida para não persistir
+     * eventuais alterações em memória que tenham ficado por uma transação
+     * revertida.
+     */
+    public function registarErroAnalise(Prescricao $prescricao, string $mensagemErro): void
+    {
+        Prescricao::query()
+            ->where('id', $prescricao->id)
+            ->update([
+                'estado' => EstadoPrescricao::ERRO_ANALISE->value,
+                'mensagem_erro' => $mensagemErro,
+            ]);
     }
 }

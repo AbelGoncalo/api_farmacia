@@ -6,6 +6,7 @@ use App\Models\Prescricao;
 use App\Repositories\Prescricao\PrescricaoRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Mockery;
 use RuntimeException;
@@ -23,6 +24,7 @@ class SubmeterPrescricaoTest extends TestCase
     {
         parent::setUp();
 
+        Queue::fake();
         Storage::fake('local');
         Storage::fake('public');
     }
