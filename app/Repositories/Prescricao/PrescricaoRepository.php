@@ -37,7 +37,7 @@ class PrescricaoRepository
     public function buscar(string $id): ?Prescricao
     {
         return Prescricao::query()
-            ->with('itens.produto:id,codigo,nome')
+            ->with(['itens.produto:id,codigo,nome', 'revisor:id,nome'])
             ->where('id', $id)
             ->first();
     }
@@ -133,5 +133,67 @@ class PrescricaoRepository
                 'estado' => EstadoPrescricao::ERRO_ANALISE->value,
                 'mensagem_erro' => $mensagemErro,
             ]);
+    }
+
+    /**
+     * Lista prescrições na fila de revisão, de forma paginada.
+     *
+     * Ao contrário das vistas do cliente, esta fila mostra prescrições de
+     * qualquer utilizador (é uma fila de trabalho do profissional).
+     *
+     * @param  array{estado?: string}  $filtros
+     */
+    public function listarParaRevisao(array $filtros, int $porPagina): LengthAwarePaginator
+    {
+        return Prescricao::query()
+            ->with('itens.produto:id,codigo,nome')
+            ->when($filtros['estado'] ?? null, fn ($query, $estado) => $query->where('estado', $estado))
+            ->orderByDesc('criado_em')
+            ->paginate($porPagina);
+    }
+
+    /**
+     * Trava uma prescrição e valida que está num estado de origem aceitável
+     * para a transição pretendida (SELECT ... FOR UPDATE).
+     *
+     * Devolve a prescrição quando a transição é legítima, ou null quando não
+     * existe, não está no estado de origem, ou já foi revista. O bloqueio
+     * impede revisões concorrentes da mesma prescrição.
+     *
+     * @param  list<EstadoPrescricao>  $estadosOrigem
+     */
+    public function travarParaRevisao(string $id, array $estadosOrigem): ?Prescricao
+    {
+        $prescricao = Prescricao::query()
+            ->where('id', $id)
+            ->lockForUpdate()
+            ->first();
+
+        if ($prescricao === null) {
+            return null;
+        }
+
+        if (! in_array($prescricao->estado, array_map(fn ($estado) => $estado->value, $estadosOrigem), true)) {
+            return null;
+        }
+
+        return $prescricao;
+    }
+
+    /**
+     * Regista a decisão de revisão: estado final, revisor, data da revisão e
+     * notas do profissional.
+     */
+    public function registarRevisao(
+        Prescricao $prescricao,
+        EstadoPrescricao $estado,
+        int $revisorId,
+        ?string $notas,
+    ): void {
+        $prescricao->estado = $estado->value;
+        $prescricao->revisto_por = $revisorId;
+        $prescricao->revisto_em = now();
+        $prescricao->notas_profissional = $notas;
+        $prescricao->save();
     }
 }
