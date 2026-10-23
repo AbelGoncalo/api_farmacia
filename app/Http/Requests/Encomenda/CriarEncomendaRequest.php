@@ -30,7 +30,9 @@ class CriarEncomendaRequest extends FormRequest
                 'nullable',
                 'uuid',
                 Rule::requiredIf($this->input('tipo_entrega') === TipoEntrega::ENTREGA_DOMICILIO->value),
-                Rule::exists('moradas', 'id')->where('utilizador_id', $this->user()?->id),
+                Rule::exists('moradas', 'id')
+                    ->where('utilizador_id', $this->user()?->id)
+                    ->where('ativa', true),
             ],
             'tipo_documento' => ['nullable', 'string', 'max:50'],
             'observacoes' => ['nullable', 'string', 'max:1000'],
@@ -50,7 +52,7 @@ class CriarEncomendaRequest extends FormRequest
             'tipo_entrega.enum' => 'O tipo de entrega deve ser RECOLHA_LOJA ou ENTREGA_DOMICILIO.',
             'morada_id.required' => 'A morada é obrigatória para entrega ao domicílio.',
             'morada_id.uuid' => 'A morada indicada não é válida.',
-            'morada_id.exists' => 'A morada indicada não existe.',
+            'morada_id.exists' => 'A morada indicada não existe ou não está ativa.',
             'tipo_documento.max' => 'O tipo de documento não pode exceder 50 caracteres.',
             'observacoes.max' => 'As observações não podem exceder 1000 caracteres.',
             'prescricao_id.uuid' => 'A receita indicada não é válida.',

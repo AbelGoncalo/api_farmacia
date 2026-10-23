@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Catalogo\CatalogoController;
 use App\Http\Controllers\Api\V1\Encomenda\EncomendaController;
 use App\Http\Controllers\Api\V1\Encomenda\EntregaController;
 use App\Http\Controllers\Api\V1\Encomenda\PagamentoController;
+use App\Http\Controllers\Api\V1\Morada\MoradaController;
 use App\Http\Controllers\Api\V1\Prescricao\PrescricaoController;
 use App\Http\Controllers\Api\V1\Prescricao\PrescricaoRevisaoController;
 use Illuminate\Support\Facades\Route;
@@ -30,6 +31,14 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1')->name('login');
         Route::patch('/atualizar', [AuthController::class, 'atualizar'])->middleware('auth:api')->name('atualizar');
         Route::post('/sair', [AuthController::class, 'sair'])->middleware('auth:api')->name('sair');
+    });
+
+    Route::prefix('moradas')->name('moradas.')->middleware('auth:api')->group(function (): void {
+        Route::get('/', [MoradaController::class, 'index'])->name('index');
+        Route::post('/', [MoradaController::class, 'store'])->name('store');
+        Route::get('/{morada}', [MoradaController::class, 'show'])->name('show');
+        Route::patch('/{morada}', [MoradaController::class, 'update'])->name('update');
+        Route::delete('/{morada}', [MoradaController::class, 'destroy'])->name('destroy');
     });
 
     Route::prefix('encomendas')->name('encomendas.')->middleware('auth:api')->group(function (): void {

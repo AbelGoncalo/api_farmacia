@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
@@ -45,6 +46,12 @@ class User extends Authenticatable implements JWTSubject
         $atual = $this->papelEnum();
 
         return $atual !== null && in_array($atual, $papeis, true);
+    }
+
+    /** @return HasMany<Morada, User> */
+    public function moradas(): HasMany
+    {
+        return $this->hasMany(Morada::class, 'utilizador_id');
     }
 
     public function getJWTIdentifier(): int|string
