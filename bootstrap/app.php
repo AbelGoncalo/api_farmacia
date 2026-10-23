@@ -2,6 +2,7 @@
 
 use App\Exceptions\CarrinhoException;
 use App\Exceptions\EncomendaException;
+use App\Exceptions\PrescricaoException;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -52,6 +53,18 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (EncomendaException $e, Request $request): ?JsonResponse {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+                'errors' => $e->errors(),
+            ], $e->status());
+        });
+
+        $exceptions->render(function (PrescricaoException $e, Request $request): ?JsonResponse {
             if (! $request->is('api/*')) {
                 return null;
             }

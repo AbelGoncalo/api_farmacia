@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Catalogo\CatalogoController;
 use App\Http\Controllers\Api\V1\Encomenda\EncomendaController;
 use App\Http\Controllers\Api\V1\Encomenda\EntregaController;
 use App\Http\Controllers\Api\V1\Encomenda\PagamentoController;
+use App\Http\Controllers\Api\V1\Prescricao\PrescricaoController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -39,6 +40,13 @@ Route::prefix('v1')->group(function (): void {
 
     Route::prefix('pagamentos')->name('pagamentos.')->middleware(['auth:api', 'can:processar-encomendas'])->group(function (): void {
         Route::patch('/{pagamento}/confirmar', [PagamentoController::class, 'confirmar'])->name('confirmar');
+    });
+
+    Route::prefix('prescricoes')->name('prescricoes.')->middleware('auth:api')->group(function (): void {
+        Route::get('/', [PrescricaoController::class, 'index'])->name('index');
+        Route::post('/', [PrescricaoController::class, 'store'])->name('store');
+        Route::get('/{prescricao}', [PrescricaoController::class, 'show'])->name('show');
+        Route::get('/{prescricao}/documento', [PrescricaoController::class, 'documento'])->name('documento');
     });
 
     Route::prefix('entregas')->name('entregas.')->middleware(['auth:api', 'can:processar-encomendas'])->group(function (): void {
