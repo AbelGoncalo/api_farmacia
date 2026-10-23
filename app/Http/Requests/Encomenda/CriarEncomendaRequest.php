@@ -34,6 +34,7 @@ class CriarEncomendaRequest extends FormRequest
             ],
             'tipo_documento' => ['nullable', 'string', 'max:50'],
             'observacoes' => ['nullable', 'string', 'max:1000'],
+            'prescricao_id' => ['nullable', 'uuid'],
         ];
     }
 
@@ -52,6 +53,7 @@ class CriarEncomendaRequest extends FormRequest
             'morada_id.exists' => 'A morada indicada não existe.',
             'tipo_documento.max' => 'O tipo de documento não pode exceder 50 caracteres.',
             'observacoes.max' => 'As observações não podem exceder 1000 caracteres.',
+            'prescricao_id.uuid' => 'A receita indicada não é válida.',
         ];
     }
 }

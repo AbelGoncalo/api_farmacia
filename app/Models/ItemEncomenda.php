@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 #[Fillable([
     'id',
@@ -48,5 +49,21 @@ class ItemEncomenda extends Model
     public function produto(): BelongsTo
     {
         return $this->belongsTo(Produto::class, 'produto_id');
+    }
+
+    /**
+     * Itens de prescrição que a encomenda consumiu, através do pivot
+     * `itens_encomenda_prescricao` (registos de utilização).
+     *
+     * @return BelongsToMany<ItemPrescricao, ItemEncomenda>
+     */
+    public function itensPrescricao(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            ItemPrescricao::class,
+            'itens_encomenda_prescricao',
+            'item_encomenda_id',
+            'item_prescricao_id',
+        )->withPivot('quantidade');
     }
 }

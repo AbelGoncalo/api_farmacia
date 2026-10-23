@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
     'dosagem',
     'apresentacao',
     'quantidade',
+    'quantidade_consumida',
     'produto_id',
     'estado_correspondencia',
     'metodo_correspondencia',
@@ -40,8 +41,18 @@ class ItemPrescricao extends Model
     {
         return [
             'quantidade' => 'decimal:3',
+            'quantidade_consumida' => 'decimal:3',
             'confianca_correspondencia' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Quantidade deste item ainda disponível para consumo (total prescrito
+     * menos o que já foi usado por encomendas). Nunca fica negativa.
+     */
+    public function getQuantidadeRestanteAttribute(): float
+    {
+        return max(0.0, (float) $this->quantidade - (float) $this->quantidade_consumida);
     }
 
     /** @return BelongsTo<Prescricao, ItemPrescricao> */

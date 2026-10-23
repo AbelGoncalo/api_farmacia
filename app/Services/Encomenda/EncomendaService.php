@@ -9,7 +9,9 @@ use App\Models\Encomenda;
 use App\Models\User;
 use App\Repositories\Carrinho\CarrinhoRepository;
 use App\Repositories\Encomenda\EncomendaRepository;
+use App\Services\Prescricao\ConsumoPrescricaoService;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -18,6 +20,7 @@ class EncomendaService
     public function __construct(
         private readonly EncomendaRepository $encomendaRepository,
         private readonly CarrinhoRepository $carrinhoRepository,
+        private readonly ConsumoPrescricaoService $consumoPrescricaoService,
     ) {}
 
     /**
@@ -86,8 +89,16 @@ class EncomendaService
                 ];
             }
 
+            $prescricao = $this->consumoPrescricaoService->validar(
+                $utilizador->id,
+                $dados['prescricao_id'] ?? null,
+                $produtos,
+                $linhas,
+            );
+
             $subtotal = round($subtotal, 2);
             $taxaEntrega = $this->taxaEntrega($tipoEntrega);
+            $itensEncomenda = new Collection;
             $total = round($subtotal + $taxaEntrega, 2);
 
             $encomenda = $this->encomendaRepository->criarEncomenda([
@@ -105,7 +116,7 @@ class EncomendaService
             ]);
 
             foreach ($linhas as $linha) {
-                $this->encomendaRepository->criarItem(
+                $itemEncomenda = $this->encomendaRepository->criarItem(
                     $encomenda,
                     $linha['produto'],
                     $linha['quantidade'],
@@ -113,7 +124,17 @@ class EncomendaService
                     $linha['subtotal'],
                 );
 
+                $itensEncomenda->put($linha['produto']->id, $itemEncomenda);
+
                 $this->encomendaRepository->decrementarStock($linha['produto'], $linha['quantidade']);
+            }
+
+            if ($prescricao !== null) {
+                $this->consumoPrescricaoService->registar(
+                    $prescricao,
+                    $this->consumoPrescricaoService->itensPorProduto($prescricao),
+                    $itensEncomenda,
+                );
             }
 
             $this->carrinhoRepository->esvaziarCarrinho($carrinho);
