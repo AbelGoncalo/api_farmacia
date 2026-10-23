@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Api\V1\Encomenda;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Encomenda\BuscarEncomendaRequest;
+use App\Http\Requests\Encomenda\CancelarEncomendaRequest;
 use App\Http\Requests\Encomenda\CriarEncomendaRequest;
 use App\Http\Resources\EncomendaResource;
 use App\Models\User;
+use App\Services\Encomenda\CancelamentoEncomendaService;
 use App\Services\Encomenda\EncomendaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,6 +17,7 @@ class EncomendaController extends Controller
 {
     public function __construct(
         private readonly EncomendaService $encomendaService,
+        private readonly CancelamentoEncomendaService $cancelamentoService,
     ) {}
 
     /**
@@ -78,6 +81,26 @@ class EncomendaController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Encomenda carregada com sucesso.',
+            'data' => new EncomendaResource($encomenda),
+        ]);
+    }
+
+    /**
+     * Cancela uma encomenda do utilizador autenticado.
+     *
+     * Repõe o stock, devolve quantidades às prescrições, falha pagamentos
+     * pendentes e cancela a entrega pendente.
+     */
+    public function cancelar(CancelarEncomendaRequest $request): JsonResponse
+    {
+        $encomenda = $this->cancelamentoService->cancelar(
+            $request->validated('encomenda'),
+            $this->utilizador($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Encomenda cancelada com sucesso.',
             'data' => new EncomendaResource($encomenda),
         ]);
     }

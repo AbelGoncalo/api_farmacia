@@ -36,6 +36,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/', [EncomendaController::class, 'index'])->name('index');
         Route::post('/', [EncomendaController::class, 'store'])->name('store');
         Route::get('/{encomenda}', [EncomendaController::class, 'show'])->name('show');
+        Route::patch('/{encomenda}/cancelar', [EncomendaController::class, 'cancelar'])->name('cancelar');
         Route::post('/{encomenda}/pagamento', [PagamentoController::class, 'registar'])->name('pagamento.registar');
     });
 

@@ -7,4 +7,5 @@ enum EstadoEntrega: string
     case PENDENTE = 'PENDENTE';
     case EM_TRANSPORTE = 'EM_TRANSPORTE';
     case ENTREGUE = 'ENTREGUE';
+    case CANCELADA = 'CANCELADA';
 }

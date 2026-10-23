@@ -59,4 +59,19 @@ class PagamentoRepository
         $pagamento->pago_em = now();
         $pagamento->save();
     }
+
+    /**
+     * Marca como FALHADO todos os pagamentos pendentes de uma encomenda.
+     *
+     * Usado no cancelamento: um pagamento nunca cobrado não pode ficar
+     * pendente contra uma encomenda que deixou de existir em termos de
+     * negócio, sob risco de ser confirmado mais tarde.
+     */
+    public function falharPendentesDaEncomenda(string $encomendaId): void
+    {
+        Pagamento::query()
+            ->where('encomenda_id', $encomendaId)
+            ->where('estado', 'PENDENTE')
+            ->update(['estado' => 'FALHADO']);
+    }
 }

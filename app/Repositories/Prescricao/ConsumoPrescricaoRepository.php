@@ -69,4 +69,30 @@ class ConsumoPrescricaoRepository
         $item->quantidade_consumida = (float) $item->quantidade_consumida + $quantidade;
         $item->save();
     }
+
+    /**
+     * Devolve ao item de prescrição a quantidade que um item de encomenda
+     * consumiu, e remove o registo de utilização do pivot.
+     *
+     * Usado no cancelamento: a quantidade consumida volta a ficar
+     * disponível para novas compras. O contador nunca fica negativo.
+     */
+    public function devolverConsumo(ItemPrescricao $item, ItemEncomenda $itemEncomenda): void
+    {
+        $quantidade = $item->itensEncomenda()
+            ->where('item_encomenda_id', $itemEncomenda->id)
+            ->first()?->pivot->quantidade;
+
+        if ($quantidade === null) {
+            return;
+        }
+
+        $item->itensEncomenda()->detach($itemEncomenda->id);
+
+        $item->quantidade_consumida = max(
+            0.0,
+            (float) $item->quantidade_consumida - (float) $quantidade,
+        );
+        $item->save();
+    }
 }

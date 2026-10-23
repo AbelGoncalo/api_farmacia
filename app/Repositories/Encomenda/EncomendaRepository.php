@@ -85,6 +85,14 @@ class EncomendaRepository
     }
 
     /**
+     * Repõe a quantidade em stock do produto indicado (cancelamento de encomenda).
+     */
+    public function reporStock(Produto $produto, float $quantidade): void
+    {
+        $produto->increment('quantidade_stock', $quantidade);
+    }
+
+    /**
      * Lista as encomendas do utilizador, com itens e produtos, de forma paginada.
      */
     public function listarPorUtilizador(int $utilizadorId, int $porPagina): LengthAwarePaginator

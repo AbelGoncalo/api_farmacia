@@ -60,6 +60,18 @@ class EntregaRepository
     }
 
     /**
+     * Cancela a entrega pendente de uma encomenda, se existir e ainda
+     * não tiver começado (cancelamento da encomenda associada).
+     */
+    public function cancelarPendenteDaEncomenda(string $encomendaId): void
+    {
+        Entrega::query()
+            ->where('encomenda_id', $encomendaId)
+            ->where('estado', EstadoEntrega::PENDENTE->value)
+            ->update(['estado' => EstadoEntrega::CANCELADA->value]);
+    }
+
+    /**
      * Atualiza o estado da entrega.
      */
     public function alterarEstado(Entrega $entrega, EstadoEntrega $estado): void
